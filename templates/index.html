@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Clip to Movie Name Finder</title>
+    <style>
+        body {
+            background-color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            width: 80%;
+            max-width: 600px;
+            margin-bottom: 20px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #submitBtn {
+            background-color: lightgray;
+            color: white;
+        }
+        #submitBtn.active {
+            background-color: blue;
+        }
+        #statusBtn {
+            background-color: lightgray;
+            color: white;
+        }
+        #statusBtn.active {
+            background-color: green;
+        }
+        #status {
+            margin-top: 20px;
+            color: #333;
+        }
+        #transcription {
+            margin-top: 30px;
+            font-style: italic;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Movie Clip to Movie Name Finder</h1>
+
+    <input type="text" id="video_url" placeholder="Enter movie clip URL" oninput="checkInput()">
+    <br>
+    <button id="submitBtn" disabled>Submit</button>
+    <button id="statusBtn" disabled>Status</button>
+
+    <div id="status"></div>
+    <div id="transcription"></div>
+
+    <script>
+        function checkInput() {
+            const urlInput = document.getElementById("video_url").value;
+            const submitBtn = document.getElementById("submitBtn");
+            const statusBtn = document.getElementById("statusBtn");
+
+            if (urlInput.trim() !== "") {
+                submitBtn.disabled = false;
+                submitBtn.classList.add("active");
+
+                statusBtn.disabled = false;
+                statusBtn.classList.add("active");
+                statusBtn.textContent = "Ready to Submit";
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.classList.remove("active");
+
+                statusBtn.disabled = true;
+                statusBtn.classList.remove("active");
+                statusBtn.textContent = "";
+            }
+        }
+
+        document.getElementById("submitBtn").addEventListener("click", function () {
+            const videoUrl = document.getElementById("video_url").value;
+            const statusDiv = document.getElementById("status");
+            const transcriptionDiv = document.getElementById("transcription");
+
+            statusDiv.textContent = "Submitting URL...";
+
+            // Send the URL to the Flask server using fetch API (AJAX)
+            fetch('/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    video_url: videoUrl
+                })
+            })
+            .then(response => response.text())
+            .then(data => {
+                statusDiv.textContent = "Transcription completed!";
+                transcriptionDiv.textContent = data;
+                document.getElementById("statusBtn").textContent = "Completed";
+            })
+            .catch(error => {
+                statusDiv.textContent = "An error occurred: " + error;
+                document.getElementById("statusBtn").textContent = "Error";
+            });
+        });
+    </script>
+
+</body>
+</html>

@@ -74,3 +74,5 @@ websockets==13.0.1
 Werkzeug==3.0.4
 yt-dlp==2024.8.6
 streamlit==1.43.2
+pandas==2.2.3
+altair==5.5.0

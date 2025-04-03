@@ -5,6 +5,8 @@ import subprocess
 import random
 import string
 import whisper
+import streamlit as st
+import pandas as pd
 
 app = Flask(__name__)
 output_folder = os.path.join(os.getcwd(), 'uploads')

@@ -5,8 +5,6 @@ import subprocess
 import random
 import string
 import whisper
-import streamlit as st
-import pandas as pd
 
 app = Flask(__name__)
 output_folder = os.path.join(os.getcwd(), 'uploads')
@@ -88,4 +86,4 @@ def transcribe_audio(audio_path):
     return result['text']
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)  # Run without debug mode

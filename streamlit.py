@@ -21,11 +21,23 @@ def generate_new_filename(original_filename):
     new_filename = f"{base_name}_{random_digits}.wav"
     return new_filename
 
-# Download the audio from the URL using yt-dlp
+# List of User-Agent strings
+user_agents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
+    # Add more user agents as needed
+]
+
+# Download the audio from the URL using yt-dlp with User-Agent rotation
 def download_audio(url):
+    # Randomly select a User-Agent
+    user_agent = random.choice(user_agents)
+    
     ydl_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': os.path.join(output_folder, '%(title)s.%(ext)s')
+        'outtmpl': os.path.join(output_folder, '%(title)s.%(ext)s'),
+        'User-Agent': user_agent  # Add this line to rotate User-Agent
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:

@@ -85,29 +85,37 @@ def transcribe_audio(audio_path):
 # Streamlit UI
 st.title('YouTube Video Transcription')
 
+# Debug: Print out the secrets to verify they're loaded correctly
+st.write("Debugging Secrets:")
+st.write(st.secrets["google_oauth_credentials"])
+
 # OAuth Flow
 def run_oauth_flow():
-    # Use Streamlit secrets to get the credentials
-    flow = Flow.from_client_config(
-        client_config=st.secrets["google_oauth_credentials"],
-        scopes=SCOPES,
-        redirect_uri=st.secrets["google_oauth_credentials"]["redirect_uris"][0]
-    )
-    
-    # Generate URL for OAuth consent
-    auth_url, _ = flow.authorization_url(prompt='consent')
-    
-    # Display the URL to the user
-    st.write("Please visit this URL to authorize access:")
-    st.write(auth_url)
-    
-    # Get the authorization code from the user
-    code = st.text_input('Enter the authorization code from the URL:')
-    
-    if st.button('Authorize'):
-        flow.fetch_token(code=code)
-        credentials = flow.credentials
-        return credentials
+    try:
+        # Use Streamlit secrets to get the credentials
+        flow = Flow.from_client_config(
+            client_config=st.secrets["google_oauth_credentials"],
+            scopes=SCOPES,
+            redirect_uri=st.secrets["google_oauth_credentials"]["redirect_uris"][0]
+        )
+        
+        # Generate URL for OAuth consent
+        auth_url, _ = flow.authorization_url(prompt='consent')
+        
+        # Display the URL to the user
+        st.write("Please visit this URL to authorize access:")
+        st.write(auth_url)
+        
+        # Get the authorization code from the user
+        code = st.text_input('Enter the authorization code from the URL:')
+        
+        if st.button('Authorize'):
+            flow.fetch_token(code=code)
+            credentials = flow.credentials
+            return credentials
+    except Exception as e:
+        st.error(f"OAuth flow error: {str(e)}")
+        return None
 
 # Check if we have credentials
 if 'credentials' not in st.session_state or st.session_state['credentials'] is None:

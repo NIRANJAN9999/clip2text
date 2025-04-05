@@ -5,6 +5,7 @@ import subprocess
 import random
 import string
 import whisper
+import tempfile
 
 # Ensure the uploads folder exists
 output_folder = os.path.join(os.getcwd(), 'uploads')
@@ -21,23 +22,12 @@ def generate_new_filename(original_filename):
     new_filename = f"{base_name}_{random_digits}.wav"
     return new_filename
 
-# List of User-Agent strings
-user_agents = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
-    # Add more user agents as needed
-]
-
-# Download the audio from the URL using yt-dlp with User-Agent rotation
-def download_audio(url):
-    # Randomly select a User-Agent
-    user_agent = random.choice(user_agents)
-    
+# Download the audio from the URL using yt-dlp with user-provided cookies
+def download_audio(url, cookie_file):
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': os.path.join(output_folder, '%(title)s.%(ext)s'),
-        'User-Agent': user_agent  # Add this line to rotate User-Agent
+        'cookiefile': cookie_file
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -77,21 +67,35 @@ def transcribe_audio(audio_path):
 # Streamlit UI
 st.title('YouTube Video Transcription')
 
-# Input for video URL
-video_url = st.text_input('Enter YouTube Video URL')
+# Step for user to upload cookies
+st.subheader('Step 1: Upload Your YouTube Cookies')
+cookie_file = st.file_uploader("Upload your YouTube cookies file (exported from your browser)", type=["txt"])
 
-if st.button('Transcribe'):
-    if video_url:
-        try:
-            # Step 1: Download and convert the audio
-            audio_file_path = download_audio(video_url)
-            
-            # Step 2: Transcribe the audio using Whisper
-            transcription = transcribe_audio(audio_file_path)
-            
-            st.write("Transcription:")
-            st.write(transcription)
-        except Exception as e:
-            st.error(f'An error occurred: {str(e)}')
-    else:
-        st.warning('Please enter a YouTube video URL.')
+if cookie_file is not None:
+    # Save the uploaded file temporarily
+    temp_dir = tempfile.mkdtemp()
+    temp_cookie_path = os.path.join(temp_dir, 'youtube_cookies.txt')
+    with open(temp_cookie_path, 'wb') as f:
+        f.write(cookie_file.getvalue())
+    
+    # Input for video URL
+    st.subheader('Step 2: Enter YouTube Video URL')
+    video_url = st.text_input('Enter YouTube Video URL')
+
+    if st.button('Transcribe'):
+        if video_url:
+            try:
+                # Step 1: Download and convert the audio
+                audio_file_path = download_audio(video_url, temp_cookie_path)
+                
+                # Step 2: Transcribe the audio using Whisper
+                transcription = transcribe_audio(audio_file_path)
+                
+                st.write("Transcription:")
+                st.write(transcription)
+            except Exception as e:
+                st.error(f'An error occurred: {str(e)}')
+        else:
+            st.warning('Please enter a YouTube video URL.')
+else:
+    st.info('Please upload your YouTube cookies file to proceed.')

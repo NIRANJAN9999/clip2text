@@ -6,9 +6,8 @@ import random
 import string
 import whisper
 import tempfile
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
-import pickle
 import google.auth.transport.requests
 
 # Ensure the uploads folder exists
@@ -89,17 +88,32 @@ st.title('YouTube Video Transcription')
 # OAuth Flow
 def run_oauth_flow():
     # Use Streamlit secrets to get the credentials
-    flow = InstalledAppFlow.from_client_config(
-        st.secrets["google_oauth_credentials"], SCOPES)
-    credentials = flow.run_local_server(port=8080)
-    return credentials
+    flow = Flow.from_client_config(
+        client_config=st.secrets["google_oauth_credentials"],
+        scopes=SCOPES,
+        redirect_uri=st.secrets["google_oauth_credentials"]["redirect_uris"][0]
+    )
+    
+    # Generate URL for OAuth consent
+    auth_url, _ = flow.authorization_url(prompt='consent')
+    
+    # Display the URL to the user
+    st.write("Please visit this URL to authorize access:")
+    st.write(auth_url)
+    
+    # Get the authorization code from the user
+    code = st.text_input('Enter the authorization code from the URL:')
+    
+    if st.button('Authorize'):
+        flow.fetch_token(code=code)
+        credentials = flow.credentials
+        return credentials
 
 # Check if we have credentials
 if 'credentials' not in st.session_state or st.session_state['credentials'] is None:
     st.subheader('Step 1: Login with Google')
-    if st.button('Login with Google'):
-        with st.spinner('Waiting for Google login...'):
-            credentials = run_oauth_flow()
+    credentials = run_oauth_flow()
+    if credentials:
         st.session_state['credentials'] = credentials
         st.success('Login successful! You can now proceed to Step 2.')
 else:

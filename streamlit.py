@@ -87,7 +87,6 @@ st.title('YouTube Video Transcription')
 
 # Debug: Print out the secrets to verify they're loaded correctly
 st.write("Debugging Secrets:")
-st.write(st.secrets["google_oauth_credentials"])
 
 # OAuth Flow
 def run_oauth_flow():

@@ -34,11 +34,8 @@ def download_audio(url, credentials):
     # Create a session with the credentials
     session = google.auth.transport.requests.AuthorizedSession(credentials)
     
-    # Use the session to fetch cookies or directly download if possible
-    # This part is complex as yt-dlp doesn't directly support OAuth sessions
-    # You might need to manually handle the download or use a workaround
-    # For simplicity, we'll simulate by passing a dummy cookie file path
-    temp_cookie_path = 'dummy_cookies.txt'  # This is just a placeholder
+    # Note: This is a placeholder since yt-dlp doesn't support OAuth directly
+    temp_cookie_path = os.path.join(tempfile.gettempdir(), 'dummy_cookies.txt')
     
     ydl_opts = {
         'format': 'bestaudio/best',
@@ -46,10 +43,13 @@ def download_audio(url, credentials):
         'cookiefile': temp_cookie_path
     }
     
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info_dict = ydl.extract_info(url, download=True)
-        original_audio_title = info_dict.get('title', 'audio')
-        audio_extension = info_dict.get('ext', 'webm')
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(url, download=True)
+            original_audio_title = info_dict.get('title', 'audio')
+            audio_extension = info_dict.get('ext', 'webm')
+    except yt_dlp.utils.DownloadError as e:
+        raise Exception(f"Failed to download video: {str(e)}")
     
     # Path to the downloaded audio file
     downloaded_audio_path = os.path.join(output_folder, f"{original_audio_title}.{audio_extension}")
@@ -65,20 +65,23 @@ def download_audio(url, credentials):
 
 # Convert the file to .wav format
 def convert_to_wav(input_path, output_path):
-    command = ['ffmpeg', '-i', input_path, output_path]
+    command = ['ffmpeg', '-i', input_path, '-acodec', 'pcm_s16le', '-ar', '44100', output_path]
 
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     if result.returncode != 0:
-        raise Exception(f"ffmpeg command failed: {result.stderr.decode()}")
+        raise Exception(f"ffmpeg command failed: {result.stderr}")
 
     # Optionally remove the original file if needed
     os.remove(input_path)
 
 # Function to transcribe audio using Whisper
 def transcribe_audio(audio_path):
-    result = model.transcribe(audio_path)
-    return result['text']
+    try:
+        result = model.transcribe(audio_path)
+        return result['text']
+    except Exception as e:
+        raise Exception(f"Transcription failed: {str(e)}")
 
 # Streamlit UI
 st.title('YouTube Video Transcription')
@@ -95,7 +98,8 @@ def run_oauth_flow():
 if 'credentials' not in st.session_state or st.session_state['credentials'] is None:
     st.subheader('Step 1: Login with Google')
     if st.button('Login with Google'):
-        credentials = run_oauth_flow()
+        with st.spinner('Waiting for Google login...'):
+            credentials = run_oauth_flow()
         st.session_state['credentials'] = credentials
         st.success('Login successful! You can now proceed to Step 2.')
 else:
@@ -105,16 +109,17 @@ else:
 
     if st.button('Transcribe'):
         if video_url:
-            try:
-                # Step 1: Download and convert the audio
-                audio_file_path = download_audio(video_url, st.session_state['credentials'])
-                
-                # Step 2: Transcribe the audio using Whisper
-                transcription = transcribe_audio(audio_file_path)
-                
-                st.write("Transcription:")
-                st.write(transcription)
-            except Exception as e:
-                st.error(f'An error occurred: {str(e)}')
+            with st.spinner('Downloading and transcribing video...'):
+                try:
+                    # Step 1: Download and convert the audio
+                    audio_file_path = download_audio(video_url, st.session_state['credentials'])
+                    
+                    # Step 2: Transcribe the audio using Whisper
+                    transcription = transcribe_audio(audio_file_path)
+                    
+                    st.write("Transcription:")
+                    st.write(transcription)
+                except Exception as e:
+                    st.error(f'An error occurred: {str(e)}')
         else:
             st.warning('Please enter a YouTube video URL.')

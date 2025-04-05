@@ -88,16 +88,13 @@ st.title('YouTube Video Transcription')
 # Debug: Print out the secrets to verify they're loaded correctly
 st.write("Debugging Secrets:")
 try:
-    st.write(st.secrets["google_oauth_credentials"])
 except KeyError:
     st.error('google_oauth_credentials not found in secrets. Please check your secrets configuration.')
 
 # OAuth Flow
 def run_oauth_flow():
     try:
-        # Use Streamlit secrets to get the credentials
-        client_config = st.secrets["google_oauth_credentials"]
-        
+        # Use Streamlit secrets to get the credentials        
         # Debug: Print out the client config to verify
         st.write("Client Config:")
         st.write(client_config)

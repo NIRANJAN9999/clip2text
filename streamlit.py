@@ -87,15 +87,29 @@ st.title('YouTube Video Transcription')
 
 # Debug: Print out the secrets to verify they're loaded correctly
 st.write("Debugging Secrets:")
+try:
+    st.write(st.secrets["google_oauth_credentials"])
+except KeyError:
+    st.error('google_oauth_credentials not found in secrets. Please check your secrets configuration.')
 
 # OAuth Flow
 def run_oauth_flow():
     try:
         # Use Streamlit secrets to get the credentials
+        client_config = st.secrets["google_oauth_credentials"]
+        
+        # Debug: Print out the client config to verify
+        st.write("Client Config:")
+        st.write(client_config)
+        
+        # Check if the client type is correct
+        if 'web' not in client_config:
+            raise ValueError("Client secrets must be for a web app.")
+        
         flow = Flow.from_client_config(
-            client_config=st.secrets["google_oauth_credentials"],
+            client_config=client_config,
             scopes=SCOPES,
-            redirect_uri=st.secrets["google_oauth_credentials"]["redirect_uris"][0]
+            redirect_uri=client_config["redirect_uris"][0]
         )
         
         # Generate URL for OAuth consent

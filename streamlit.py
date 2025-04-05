@@ -85,12 +85,6 @@ def transcribe_audio(audio_path):
 # Streamlit UI
 st.title('YouTube Video Transcription')
 
-# Debug: Print out the secrets to verify they're loaded correctly
-st.write("Debugging Secrets:")
-try:
-except KeyError:
-    st.error('google_oauth_credentials not found in secrets. Please check your secrets configuration.')
-
 # OAuth Flow
 def run_oauth_flow():
     try:
